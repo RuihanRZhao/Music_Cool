@@ -22,9 +22,21 @@ class FileStatus(Enum):
 class FileTreeWidget(QWidget):
     """文件树显示组件"""
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, i18n_manager=None):
+        # #region agent log
+        import json, os
+        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"file_tree_widget.py:25","message":"FileTreeWidget.__init__ entry","data":{"parent_type":type(parent).__name__ if parent else "None","i18n_manager_type":type(i18n_manager).__name__ if i18n_manager else "None"},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
         super().__init__(parent)
         self.current_theme: Optional[Dict[str, str]] = None
+        self.i18n_manager = i18n_manager
+        # #region agent log
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"file_tree_widget.py:29","message":"FileTreeWidget.__init__ after super()","data":{"i18n_manager_set":self.i18n_manager is not None},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
         self.init_ui()
         self.file_items = {}  # 文件路径 -> QTreeWidgetItem
         
@@ -34,7 +46,11 @@ class FileTreeWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["文件", "状态", "进度"])
+        self.tree.setHeaderLabels([
+            self._tr('file_name'),
+            self._tr('status'),
+            self._tr('progress')
+        ])
         self.tree.setRootIsDecorated(True)
         self.tree.setAlternatingRowColors(True)
         
@@ -122,7 +138,7 @@ class FileTreeWidget(QWidget):
                 if path_str not in root_items:
                     if i == len(parts) - 1:
                         # 这是文件
-                        item = QTreeWidgetItem([part, FileStatus.WAITING.value, "0%"])
+                        item = QTreeWidgetItem([part, self._get_status_text(FileStatus.WAITING), "0%"])
                         item.setData(0, Qt.ItemDataRole.UserRole, str(file_path))
                         self.file_items[str(file_path)] = item
                     else:
@@ -178,7 +194,7 @@ class FileTreeWidget(QWidget):
         item = self.file_items[file_path]
         
         # 更新状态
-        item.setText(1, status.value)
+        item.setText(1, self._get_status_text(status))
         
         # 更新进度和颜色
         status_color = self._get_status_color(status)
@@ -194,14 +210,14 @@ class FileTreeWidget(QWidget):
                 item.setForeground(1, status_color)
                 item.setForeground(2, status_color)
         elif status == FileStatus.FAILED:
-            item.setText(2, "失败")
+            item.setText(2, self._tr('file_failed'))
             if status_color:
                 item.setForeground(1, status_color)
                 item.setForeground(2, status_color)
             if error:
                 item.setToolTip(1, error)
         elif status == FileStatus.SKIPPED:
-            item.setText(2, "已复制")
+            item.setText(2, self._tr('copied'))
             if status_color:
                 item.setForeground(1, status_color)
                 item.setForeground(2, status_color)
@@ -234,13 +250,14 @@ class FileTreeWidget(QWidget):
             if file_path:  # 这是文件
                 total += 1
                 status_text = child.text(1)
-                if status_text == FileStatus.COMPLETED.value or status_text == FileStatus.SKIPPED.value:
+                # 使用翻译后的文本进行比较
+                if status_text == self._get_status_text(FileStatus.COMPLETED) or status_text == self._get_status_text(FileStatus.SKIPPED):
                     completed += 1
-                elif status_text == FileStatus.PROCESSING.value:
+                elif status_text == self._get_status_text(FileStatus.PROCESSING):
                     processing += 1
-                elif status_text == FileStatus.FAILED.value:
+                elif status_text == self._get_status_text(FileStatus.FAILED):
                     failed += 1
-                elif status_text == FileStatus.WAITING.value or not status_text:
+                elif status_text == self._get_status_text(FileStatus.WAITING) or not status_text:
                     waiting += 1
         
         # 更新父文件夹的显示
@@ -250,14 +267,14 @@ class FileTreeWidget(QWidget):
         if total > 0:
             if completed == total:
                 # 全部完成
-                parent.setText(1, "完成")
+                parent.setText(1, self._tr('completed'))
                 parent.setText(2, "100%")
                 parent.setForeground(1, QColor(self.current_theme['success']))
                 parent.setForeground(2, QColor(self.current_theme['success']))
             elif processing > 0:
                 # 有进行中的
                 progress_percent = int((completed / total) * 100)
-                parent.setText(1, "处理中")
+                parent.setText(1, self._tr('processing'))
                 parent.setText(2, f"{progress_percent}%")
                 parent.setForeground(1, QColor(self.current_theme['warning']))
                 parent.setForeground(2, QColor(self.current_theme['warning']))
@@ -265,25 +282,25 @@ class FileTreeWidget(QWidget):
                 # 有待处理的
                 progress_percent = int((completed / total) * 100)
                 if completed > 0:
-                    parent.setText(1, "部分完成")
+                    parent.setText(1, self._tr('partially_complete'))
                     parent.setText(2, f"{progress_percent}%")
                     parent.setForeground(1, QColor(self.current_theme['primary']))
                     parent.setForeground(2, QColor(self.current_theme['primary']))
                 else:
-                    parent.setText(1, "等待")
+                    parent.setText(1, self._tr('waiting'))
                     parent.setText(2, "0%")
                     parent.setForeground(1, QColor(self.current_theme['text_tertiary']))
                     parent.setForeground(2, QColor(self.current_theme['text_tertiary']))
             elif failed == total:
                 # 全部失败
-                parent.setText(1, "失败")
-                parent.setText(2, "失败")
+                parent.setText(1, self._tr('file_failed'))
+                parent.setText(2, self._tr('file_failed'))
                 parent.setForeground(1, QColor(self.current_theme['error']))
                 parent.setForeground(2, QColor(self.current_theme['error']))
             else:
                 # 混合状态
                 progress_percent = int((completed / total) * 100)
-                parent.setText(1, "处理中")
+                parent.setText(1, self._tr('processing'))
                 parent.setText(2, f"{progress_percent}%")
                 parent.setForeground(1, QColor(self.current_theme['warning']))
                 parent.setForeground(2, QColor(self.current_theme['warning']))
@@ -312,3 +329,81 @@ class FileTreeWidget(QWidget):
             if file_path:
                 files.append(file_path)
         return files
+    
+    def _tr(self, key: str) -> str:
+        """获取翻译文本"""
+        if self.i18n_manager:
+            return self.i18n_manager.tr(key)
+        # 默认返回中文（向后兼容）
+        defaults = {
+            'file_name': '文件',
+            'status': '状态',
+            'progress': '进度',
+            'waiting': '等待',
+            'processing': '处理中',
+            'completed': '完成',
+            'file_failed': '失败',
+            'copied': '已复制',
+            'partially_complete': '部分完成',
+        }
+        return defaults.get(key, key)
+    
+    def _get_status_text(self, status: FileStatus) -> str:
+        """获取状态的翻译文本"""
+        status_map = {
+            FileStatus.WAITING: self._tr('waiting'),
+            FileStatus.PROCESSING: self._tr('processing'),
+            FileStatus.COMPLETED: self._tr('completed'),
+            FileStatus.FAILED: self._tr('file_failed'),
+            FileStatus.SKIPPED: self._tr('copied'),
+        }
+        return status_map.get(status, status.value)
+    
+    def update_texts(self, i18n_manager):
+        """更新文本（语言切换时调用）"""
+        self.i18n_manager = i18n_manager
+        # 更新列标题
+        self.tree.setHeaderLabels([
+            self._tr('file_name'),
+            self._tr('status'),
+            self._tr('progress')
+        ])
+        # 更新所有文件项的状态文本
+        for file_path, item in self.file_items.items():
+            status_text = item.text(1)
+            # 根据当前文本推断状态并更新
+            if status_text == '等待' or status_text == 'Waiting':
+                item.setText(1, self._get_status_text(FileStatus.WAITING))
+            elif status_text == '处理中' or status_text == 'Processing':
+                item.setText(1, self._get_status_text(FileStatus.PROCESSING))
+            elif status_text == '完成' or status_text == 'Completed':
+                item.setText(1, self._get_status_text(FileStatus.COMPLETED))
+            elif status_text == '失败' or status_text == 'Failed':
+                item.setText(1, self._get_status_text(FileStatus.FAILED))
+            elif status_text == '已复制' or status_text == 'Copied':
+                item.setText(1, self._get_status_text(FileStatus.SKIPPED))
+        
+        # 更新所有父文件夹的状态文本
+        def update_parent_texts(parent_item):
+            if not parent_item:
+                return
+            status_text = parent_item.text(1)
+            if status_text:
+                # 根据文本推断并更新
+                if '完成' in status_text or 'Complete' in status_text:
+                    if status_text == '完成' or status_text == 'Completed':
+                        parent_item.setText(1, self._tr('completed'))
+                elif '处理中' in status_text or 'Processing' in status_text:
+                    parent_item.setText(1, self._tr('processing'))
+                elif '等待' in status_text or 'Waiting' in status_text:
+                    parent_item.setText(1, self._tr('waiting'))
+                elif '失败' in status_text or 'Failed' in status_text:
+                    parent_item.setText(1, self._tr('file_failed'))
+            
+            if parent_item.parent():
+                update_parent_texts(parent_item.parent())
+        
+        # 更新所有父项
+        for file_path, item in self.file_items.items():
+            if item.parent():
+                update_parent_texts(item.parent())

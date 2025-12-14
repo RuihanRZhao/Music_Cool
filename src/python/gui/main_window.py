@@ -7,15 +7,16 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
     QPushButton, QLabel, QLineEdit, QSpinBox, QFileDialog,
-    QTextEdit, QSplitter, QGroupBox, QFormLayout, QMessageBox,
-    QMenu
+    QTextEdit, QSplitter, QGroupBox, QFormLayout, QMessageBox
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QFont, QAction
+from PyQt6.QtGui import QFont
 
 from .progress_widget import ProgressWidget
 from .file_tree_widget import FileTreeWidget, FileStatus
 from .theme_manager import ThemeManager
+from .i18n_manager import I18nManager
+from .settings_dialog import SettingsDialog
 from decoder_wrapper import DecoderWrapper
 
 
@@ -29,6 +30,9 @@ class MainWindow(QMainWindow):
         self.total_files = 0
         self.current_file_path = ""
         
+        # 初始化国际化管理器
+        self.i18n_manager = I18nManager()
+        
         # 初始化主题管理器
         self.theme_manager = ThemeManager()
         self.current_theme = self.theme_manager.load_theme()
@@ -40,7 +44,7 @@ class MainWindow(QMainWindow):
         
     def init_ui(self):
         """初始化UI"""
-        self.setWindowTitle("NCM文件解码器")
+        self.setWindowTitle(self.i18n_manager.tr('app_title'))
         self.setMinimumSize(1200, 800)
         
         # 中央部件
@@ -53,20 +57,20 @@ class MainWindow(QMainWindow):
         
         # 标题区域
         title_layout = QHBoxLayout()
-        self.title_label = QLabel("NCM 文件解码器")
+        self.title_label = QLabel(self.i18n_manager.tr('app_title'))
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title_layout.addWidget(self.title_label, stretch=1)
         
         # 设置按钮
-        self.settings_btn = QPushButton("⚙ 设置")
+        self.settings_btn = QPushButton(f"⚙ {self.i18n_manager.tr('settings')}")
         self.settings_btn.setFixedWidth(100)
-        self.settings_btn.clicked.connect(self.show_settings_menu)
+        self.settings_btn.clicked.connect(self.show_settings_dialog)
         title_layout.addWidget(self.settings_btn, alignment=Qt.AlignmentFlag.AlignRight)
         
         main_layout.addLayout(title_layout)
         
         # 配置区域
-        self.config_group = QGroupBox("配置")
+        self.config_group = QGroupBox(self.i18n_manager.tr('config'))
         config_layout = QFormLayout()
         config_layout.setSpacing(16)
         config_layout.setContentsMargins(20, 20, 20, 20)
@@ -75,23 +79,25 @@ class MainWindow(QMainWindow):
         input_layout = QHBoxLayout()
         input_layout.setSpacing(12)
         self.input_path_edit = QLineEdit()
-        self.input_path_edit.setPlaceholderText("选择包含NCM文件的文件夹...")
-        self.input_browse_btn = QPushButton("浏览")
+        self.input_path_edit.setPlaceholderText(self.i18n_manager.tr('select_ncm_folder'))
+        self.input_browse_btn = QPushButton(self.i18n_manager.tr('browse'))
         self.input_browse_btn.clicked.connect(self.browse_input_folder)
         input_layout.addWidget(self.input_path_edit)
         input_layout.addWidget(self.input_browse_btn)
-        config_layout.addRow("输入文件夹:", input_layout)
+        self.input_folder_label = QLabel(self.i18n_manager.tr('input_folder') + ':')
+        config_layout.addRow(self.input_folder_label, input_layout)
         
         # 输出文件夹
         output_layout = QHBoxLayout()
         output_layout.setSpacing(12)
         self.output_path_edit = QLineEdit()
-        self.output_path_edit.setPlaceholderText("选择解码后文件的输出位置...")
-        self.output_browse_btn = QPushButton("浏览")
+        self.output_path_edit.setPlaceholderText(self.i18n_manager.tr('select_output_folder'))
+        self.output_browse_btn = QPushButton(self.i18n_manager.tr('browse'))
         self.output_browse_btn.clicked.connect(self.browse_output_folder)
         output_layout.addWidget(self.output_path_edit)
         output_layout.addWidget(self.output_browse_btn)
-        config_layout.addRow("输出文件夹:", output_layout)
+        self.output_folder_label = QLabel(self.i18n_manager.tr('output_folder') + ':')
+        config_layout.addRow(self.output_folder_label, output_layout)
         
         # 最大线程数
         thread_layout = QHBoxLayout()
@@ -100,11 +106,12 @@ class MainWindow(QMainWindow):
         self.thread_spinbox.setMinimum(1)
         self.thread_spinbox.setMaximum(32)
         self.thread_spinbox.setValue(8)
-        thread_label = QLabel("推荐: 4-8 线程")
+        self.thread_label = QLabel(self.i18n_manager.tr('recommended_threads'))
         thread_layout.addWidget(self.thread_spinbox)
-        thread_layout.addWidget(thread_label)
+        thread_layout.addWidget(self.thread_label)
         thread_layout.addStretch()
-        config_layout.addRow("最大线程数:", thread_layout)
+        self.max_threads_label = QLabel(self.i18n_manager.tr('max_threads') + ':')
+        config_layout.addRow(self.max_threads_label, thread_layout)
         
         self.config_group.setLayout(config_layout)
         main_layout.addWidget(self.config_group)
@@ -113,11 +120,11 @@ class MainWindow(QMainWindow):
         button_layout = QHBoxLayout()
         button_layout.setSpacing(12)
         
-        self.start_btn = QPushButton("开始解码")
+        self.start_btn = QPushButton(self.i18n_manager.tr('start_decode'))
         self.start_btn.setMinimumHeight(48)
         self.start_btn.clicked.connect(self.start_decode)
         
-        self.stop_btn = QPushButton("停止")
+        self.stop_btn = QPushButton(self.i18n_manager.tr('stop'))
         self.stop_btn.setMinimumHeight(48)
         self.stop_btn.setEnabled(False)
         self.stop_btn.clicked.connect(self.stop_decode)
@@ -129,23 +136,36 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(button_layout)
         
         # 进度显示
-        self.progress_widget = ProgressWidget()
+        # #region agent log
+        import json, os
+        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"main_window.py:139","message":"Creating ProgressWidget","data":{"i18n_manager_type":type(self.i18n_manager).__name__},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
+        self.progress_widget = ProgressWidget(i18n_manager=self.i18n_manager)
         main_layout.addWidget(self.progress_widget)
         
         # 分割器：文件树和日志
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
         
         # 文件树
-        self.file_tree_group = QGroupBox("文件列表")
+        self.file_tree_group = QGroupBox(self.i18n_manager.tr('file_list'))
         file_tree_layout = QVBoxLayout()
         file_tree_layout.setContentsMargins(12, 12, 12, 12)
-        self.file_tree = FileTreeWidget()
+        # #region agent log
+        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"main_window.py:149","message":"Creating FileTreeWidget","data":{"i18n_manager_type":type(self.i18n_manager).__name__},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
+        self.file_tree = FileTreeWidget(i18n_manager=self.i18n_manager)
         file_tree_layout.addWidget(self.file_tree)
         self.file_tree_group.setLayout(file_tree_layout)
         self.splitter.addWidget(self.file_tree_group)
         
         # 日志区域
-        self.log_group = QGroupBox("日志")
+        self.log_group = QGroupBox(self.i18n_manager.tr('log'))
         log_layout = QVBoxLayout()
         log_layout.setContentsMargins(12, 12, 12, 12)
         self.log_text = QTextEdit()
@@ -159,25 +179,114 @@ class MainWindow(QMainWindow):
         self.splitter.setStretchFactor(1, 1)
         main_layout.addWidget(self.splitter)
     
-    def show_settings_menu(self):
-        """显示设置菜单"""
-        menu = QMenu(self)
+    def show_settings_dialog(self):
+        """显示设置对话框"""
+        dialog = SettingsDialog(self, self.theme_manager, self.i18n_manager)
+        dialog.settings_changed.connect(self.on_settings_changed)
+        dialog.exec()
+    
+    def on_settings_changed(self, language: str, theme: str):
+        """设置更改回调"""
+        # #region agent log
+        import json, os
+        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:188","message":"on_settings_changed entry","data":{"language":language,"theme":theme,"current_language":self.i18n_manager.current_language,"current_theme":self.current_theme},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
         
-        # 主题切换
-        theme_menu = menu.addMenu("主题")
-        dark_action = QAction("暗色主题", self)
-        dark_action.setCheckable(True)
-        dark_action.setChecked(self.current_theme == 'dark')
-        dark_action.triggered.connect(lambda: self.switch_theme('dark'))
-        theme_menu.addAction(dark_action)
+        # 更新语言
+        # 如果 language 不是 None，说明语言被更改了（设置对话框只在 language_changed 时发送 language）
+        if language:
+            old_language = self.i18n_manager.current_language
+            # 确保 current_language 与信号中的 language 一致（可能已经在 save_language 中更新了）
+            self.i18n_manager.current_language = language
+            # #region agent log
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:194","message":"Language change detected, updating","data":{"old_language":old_language,"new_language":language},"timestamp":int(__import__('time').time()*1000)})+'\n')
+            # #endregion
+            self.update_ui_texts()
+            # #region agent log
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:199","message":"update_ui_texts completed","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
+            # #endregion
+        else:
+            # #region agent log
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:202","message":"No language change, skipping language update","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
+            # #endregion
         
-        light_action = QAction("亮色主题", self)
-        light_action.setCheckable(True)
-        light_action.setChecked(self.current_theme == 'light')
-        light_action.triggered.connect(lambda: self.switch_theme('light'))
-        theme_menu.addAction(light_action)
+        # 更新主题
+        # 如果 theme 不是 None，说明主题被更改了（设置对话框只在 theme_changed 时发送 theme）
+        if theme:
+            # #region agent log
+            with open(log_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:217","message":"Theme change detected, updating","data":{"old_theme":self.current_theme,"new_theme":theme},"timestamp":int(__import__('time').time()*1000)})+'\n')
+            # #endregion
+            self.current_theme = theme
+            self.apply_theme(theme)
+    
+    def update_ui_texts(self):
+        """更新所有UI文本"""
+        # #region agent log
+        import json, os
+        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:200","message":"update_ui_texts entry","data":{"current_language":self.i18n_manager.current_language},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
         
-        menu.exec(self.settings_btn.mapToGlobal(self.settings_btn.rect().bottomLeft()))
+        # 窗口标题
+        new_title = self.i18n_manager.tr('app_title')
+        self.setWindowTitle(new_title)
+        # #region agent log
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:207","message":"Window title updated","data":{"title":new_title},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
+        
+        # 标题标签
+        self.title_label.setText(new_title)
+        
+        # 设置按钮
+        settings_text = f"⚙ {self.i18n_manager.tr('settings')}"
+        self.settings_btn.setText(settings_text)
+        # #region agent log
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:215","message":"Settings button updated","data":{"text":settings_text},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
+        
+        # 组框标题
+        self.config_group.setTitle(self.i18n_manager.tr('config'))
+        self.file_tree_group.setTitle(self.i18n_manager.tr('file_list'))
+        self.log_group.setTitle(self.i18n_manager.tr('log'))
+        
+        # 标签
+        self.input_folder_label.setText(self.i18n_manager.tr('input_folder') + ':')
+        self.output_folder_label.setText(self.i18n_manager.tr('output_folder') + ':')
+        self.max_threads_label.setText(self.i18n_manager.tr('max_threads') + ':')
+        self.thread_label.setText(self.i18n_manager.tr('recommended_threads'))
+        
+        # 占位符
+        self.input_path_edit.setPlaceholderText(self.i18n_manager.tr('select_ncm_folder'))
+        self.output_path_edit.setPlaceholderText(self.i18n_manager.tr('select_output_folder'))
+        
+        # 按钮
+        self.input_browse_btn.setText(self.i18n_manager.tr('browse'))
+        self.output_browse_btn.setText(self.i18n_manager.tr('browse'))
+        self.start_btn.setText(self.i18n_manager.tr('start_decode'))
+        self.stop_btn.setText(self.i18n_manager.tr('stop'))
+        
+        # 更新子组件
+        # #region agent log
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:235","message":"Updating child widgets","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
+        self.progress_widget.update_texts(self.i18n_manager)
+        self.file_tree.update_texts(self.i18n_manager)
+        # #region agent log
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:238","message":"update_ui_texts completed","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
+        # #endregion
     
     def switch_theme(self, theme_name: str):
         """切换主题"""
@@ -301,7 +410,7 @@ class MainWindow(QMainWindow):
         
     def browse_input_folder(self):
         """浏览输入文件夹"""
-        folder = QFileDialog.getExistingDirectory(self, "选择输入文件夹")
+        folder = QFileDialog.getExistingDirectory(self, self.i18n_manager.tr('input_folder'))
         if folder:
             self.input_path_edit.setText(folder)
             # 自动扫描文件
@@ -309,7 +418,7 @@ class MainWindow(QMainWindow):
     
     def browse_output_folder(self):
         """浏览输出文件夹"""
-        folder = QFileDialog.getExistingDirectory(self, "选择输出文件夹")
+        folder = QFileDialog.getExistingDirectory(self, self.i18n_manager.tr('output_folder'))
         if folder:
             self.output_path_edit.setText(folder)
     
@@ -325,8 +434,8 @@ class MainWindow(QMainWindow):
             ncm_count = len(scan_result['ncm_files'])
             other_count = len(scan_result['other_files'])
             
-            self.log(f"扫描完成: 找到 {self.total_files} 个文件 "
-                    f"({ncm_count} 个NCM文件, {other_count} 个其他文件)")
+            self.log(f"{self.i18n_manager.tr('scan_complete')}: {self.total_files} files "
+                    f"({ncm_count} NCM files, {other_count} other files)")
             
             # 更新文件树
             file_list = self.decoder_wrapper.get_file_list()
@@ -337,7 +446,8 @@ class MainWindow(QMainWindow):
             self.completed_files = 0
             
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"扫描文件失败: {e}")
+            QMessageBox.critical(self, self.i18n_manager.tr('error'), 
+                               f"{self.i18n_manager.tr('scan_failed')}: {e}")
             logging.error(f"扫描文件失败: {e}", exc_info=True)
     
     def start_decode(self):
@@ -347,16 +457,19 @@ class MainWindow(QMainWindow):
         max_threads = self.thread_spinbox.value()
         
         if not input_path:
-            QMessageBox.warning(self, "警告", "请选择输入文件夹")
+            QMessageBox.warning(self, self.i18n_manager.tr('warning'), 
+                              self.i18n_manager.tr('please_select_input'))
             return
         
         if not output_path:
-            QMessageBox.warning(self, "警告", "请选择输出文件夹")
+            QMessageBox.warning(self, self.i18n_manager.tr('warning'), 
+                              self.i18n_manager.tr('please_select_output'))
             return
         
         # 检查是否正在运行
         if self.decoder_wrapper.is_running():
-            QMessageBox.warning(self, "警告", "解码任务正在运行中")
+            QMessageBox.warning(self, self.i18n_manager.tr('warning'), 
+                              self.i18n_manager.tr('decoding_in_progress'))
             return
         
         # 重置状态
@@ -378,9 +491,10 @@ class MainWindow(QMainWindow):
         # 开始解码
         try:
             self.decoder_wrapper.decode_folder(input_path, output_path, max_threads)
-            self.log(f"开始解码，使用 {max_threads} 个线程")
+            self.log(self.i18n_manager.tr('start_decoding').format(threads=max_threads))
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"启动解码失败: {e}")
+            QMessageBox.critical(self, self.i18n_manager.tr('error'), 
+                               f"{self.i18n_manager.tr('start_decode_failed')}: {e}")
             logging.error(f"启动解码失败: {e}", exc_info=True)
             self.reset_ui_state()
     
@@ -388,7 +502,7 @@ class MainWindow(QMainWindow):
         """停止解码"""
         if self.decoder_wrapper.is_running():
             self.decoder_wrapper.stop()
-            self.log("正在停止解码...")
+            self.log(self.i18n_manager.tr('stopping'))
     
     def on_file_progress(self, file_path: str, current_bytes: int, total_bytes: int, finished: bool):
         """文件进度更新"""
@@ -415,25 +529,27 @@ class MainWindow(QMainWindow):
         # 更新文件树
         if success:
             # 如果是已复制的文件（无需解码），使用 SKIPPED 状态
-            if output_format == "已复制":
+            # 检查中英文两种可能的返回值（向后兼容）
+            if output_format == "已复制" or output_format == "Copied" or output_format == self.i18n_manager.tr('copied'):
                 self.file_tree.update_file_status(file_path, FileStatus.SKIPPED)
-                self.log(f"✓ 已复制: {Path(file_path).name}")
+                self.log(f"✓ {self.i18n_manager.tr('copied')}: {Path(file_path).name}")
             else:
                 self.file_tree.update_file_status(file_path, FileStatus.COMPLETED)
-                self.log(f"✓ 完成: {Path(file_path).name}")
+                self.log(f"✓ {self.i18n_manager.tr('file_complete')}: {Path(file_path).name}")
         else:
             self.file_tree.update_file_status(file_path, FileStatus.FAILED, error=error)
-            self.log(f"✗ 失败: {Path(file_path).name} - {error}")
+            self.log(f"✗ {self.i18n_manager.tr('file_failed')}: {Path(file_path).name} - {error}")
     
     def on_all_finished(self):
         """所有文件完成"""
-        self.log("所有文件处理完成！")
+        self.log(self.i18n_manager.tr('all_files_complete'))
         self.reset_ui_state()
-        QMessageBox.information(self, "完成", "所有文件处理完成！")
+        QMessageBox.information(self, self.i18n_manager.tr('success'), 
+                               self.i18n_manager.tr('all_files_complete'))
     
     def on_error(self, file_path: str, error: str):
         """错误处理"""
-        self.log(f"错误: {error}")
+        self.log(f"{self.i18n_manager.tr('error')}: {error}")
         if file_path:
             self.file_tree.update_file_status(file_path, FileStatus.FAILED, error=error)
     
@@ -463,8 +579,8 @@ class MainWindow(QMainWindow):
         if self.decoder_wrapper.is_running():
             reply = QMessageBox.question(
                 self, 
-                "确认", 
-                "解码任务正在运行中，确定要退出吗？",
+                self.i18n_manager.tr('confirm'), 
+                self.i18n_manager.tr('confirm_exit'),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No
             )

@@ -7,7 +7,7 @@ a = Analysis(
     pathex=[],
     binaries=[
         # C++扩展模块（需要先编译）
-        # ('../../build/ncm_decoder.pyd', '.'),
+        ('../../build/ncm_decoder.pyd', '.'),
         # OpenSSL DLL（如果使用动态链接）
         # ('../../src/shared/ext/lib/libcrypto-1_1.dll', '.'),
         # ('../../src/shared/ext/lib/libssl-1_1.dll', '.'),

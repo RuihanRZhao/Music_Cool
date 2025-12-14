@@ -9,19 +9,19 @@ import subprocess
 from pathlib import Path
 
 
-def create_nsis_installer(dist_dir: str, output_file: str):
+def create_nsis_installer(dist_dir: str, output_file: str, app_name: str = "NCM解码器", app_version: str = "1.0.0", publisher: str = "CloudMusicDecoder"):
     """使用NSIS创建安装程序"""
     nsis_script = """
-; NCM解码器安装脚本
-!define APP_NAME "NCM解码器"
-!define APP_VERSION "1.0.0"
-!define APP_PUBLISHER "CloudMusicDecoder"
+; {app_name}安装脚本
+!define APP_NAME "{app_name}"
+!define APP_VERSION "{app_version}"
+!define APP_PUBLISHER "{publisher}"
 !define APP_EXE "NCMDecoder.exe"
-!define APP_DIR "NCMDecoder"
+!define APP_DIR "{app_dir}"
 
-Name "${APP_NAME}"
+Name "${{APP_NAME}}"
 OutFile "{output_file}"
-InstallDir "$PROGRAMFILES\\${APP_DIR}"
+InstallDir "$PROGRAMFILES\\${{APP_DIR}}"
 RequestExecutionLevel admin
 
 Page directory
@@ -32,27 +32,36 @@ Section "Install"
     File /r "{dist_dir}\\*"
     
     ; 创建开始菜单快捷方式
-    CreateDirectory "$SMPROGRAMS\\${APP_DIR}"
-    CreateShortCut "$SMPROGRAMS\\${APP_DIR}\\${APP_NAME}.lnk" "$INSTDIR\\${APP_EXE}"
-    CreateShortCut "$SMPROGRAMS\\${APP_DIR}\\卸载.lnk" "$INSTDIR\\uninstall.exe"
+    CreateDirectory "$SMPROGRAMS\\${{APP_DIR}}"
+    CreateShortCut "$SMPROGRAMS\\${{APP_DIR}}\\${{APP_NAME}}.lnk" "$INSTDIR\\${{APP_EXE}}"
+    CreateShortCut "$SMPROGRAMS\\${{APP_DIR}}\\卸载.lnk" "$INSTDIR\\uninstall.exe"
     
     ; 创建桌面快捷方式
-    CreateShortCut "$DESKTOP\\${APP_NAME}.lnk" "$INSTDIR\\${APP_EXE}"
+    CreateShortCut "$DESKTOP\\${{APP_NAME}}.lnk" "$INSTDIR\\${{APP_EXE}}"
     
     ; 写入卸载信息
     WriteUninstaller "$INSTDIR\\uninstall.exe"
-    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${APP_NAME}" "DisplayName" "${APP_NAME}"
-    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${APP_NAME}" "UninstallString" "$INSTDIR\\uninstall.exe"
+    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "DisplayName" "${{APP_NAME}}"
+    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "UninstallString" "$INSTDIR\\uninstall.exe"
+    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "Publisher" "${{APP_PUBLISHER}}"
+    WriteRegStr HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}" "DisplayVersion" "${{APP_VERSION}}"
 SectionEnd
 
 Section "Uninstall"
     Delete "$INSTDIR\\uninstall.exe"
     RMDir /r "$INSTDIR"
-    RMDir /r "$SMPROGRAMS\\${APP_DIR}"
-    Delete "$DESKTOP\\${APP_NAME}.lnk"
-    DeleteRegKey HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${APP_NAME}"
+    RMDir /r "$SMPROGRAMS\\${{APP_DIR}}"
+    Delete "$DESKTOP\\${{APP_NAME}}.lnk"
+    DeleteRegKey HKLM "Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\${{APP_NAME}}"
 SectionEnd
-""".format(output_file=output_file, dist_dir=dist_dir)
+""".format(
+        output_file=output_file, 
+        dist_dir=dist_dir,
+        app_name=app_name,
+        app_version=app_version,
+        publisher=publisher,
+        app_dir=app_name.replace(" ", "")
+    )
     
     script_path = Path("installer.nsi")
     script_path.write_text(nsis_script, encoding='utf-8')
@@ -83,15 +92,15 @@ SectionEnd
         sys.exit(1)
 
 
-def create_inno_setup_installer(dist_dir: str, output_file: str):
+def create_inno_setup_installer(dist_dir: str, output_file: str, app_name: str = "NCM解码器", app_version: str = "1.0.0", publisher: str = "CloudMusicDecoder"):
     """使用Inno Setup创建安装程序"""
     inno_script = """
 [Setup]
-AppName=NCM解码器
-AppVersion=1.0.0
-AppPublisher=CloudMusicDecoder
-DefaultDirName={{pf}\\NCMDecoder
-DefaultGroupName=NCM解码器
+AppName={app_name}
+AppVersion={app_version}
+AppPublisher={publisher}
+DefaultDirName={{pf}}\\{app_dir}
+DefaultGroupName={app_name}
 OutputDir=.
 OutputBaseFilename={output_base}
 Compression=lzma
@@ -102,15 +111,19 @@ PrivilegesRequired=admin
 Source: "{dist_dir}\\*"; DestDir: "{{app}}"; Flags: ignoreversion recursesubdirs
 
 [Icons]
-Name: "{{group}}\\NCM解码器"; Filename: "{{app}}\\NCMDecoder.exe"
+Name: "{{group}}\\{app_name}"; Filename: "{{app}}\\NCMDecoder.exe"
 Name: "{{group}}\\卸载"; Filename: "{{uninstallexe}}"
-Name: "{{commondesktop}}\\NCM解码器"; Filename: "{{app}}\\NCMDecoder.exe"
+Name: "{{commondesktop}}\\{app_name}"; Filename: "{{app}}\\NCMDecoder.exe"
 
 [Run]
-Filename: "{{app}}\\NCMDecoder.exe"; Description: "启动NCM解码器"; Flags: nowait postinstall skipifsilent
+Filename: "{{app}}\\NCMDecoder.exe"; Description: "启动{app_name}"; Flags: nowait postinstall skipifsilent
 """.format(
         dist_dir=dist_dir.replace("\\", "\\\\"),
-        output_base=Path(output_file).stem
+        output_base=Path(output_file).stem,
+        app_name=app_name,
+        app_version=app_version,
+        publisher=publisher,
+        app_dir=app_name.replace(" ", "")
     )
     
     script_path = Path("installer.iss")
@@ -143,27 +156,28 @@ Filename: "{{app}}\\NCMDecoder.exe"; Description: "启动NCM解码器"; Flags: n
 
 def main():
     """主函数"""
-    if len(sys.argv) < 3:
-        print("用法: python create_windows_installer.py <dist_dir> <output_file> [nsis|inno]")
-        print("  dist_dir: PyInstaller输出的目录")
-        print("  output_file: 输出安装程序文件名")
-        print("  [nsis|inno]: 安装程序类型（默认: nsis）")
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='创建Windows安装程序')
+    parser.add_argument('dist_dir', help='PyInstaller输出的目录')
+    parser.add_argument('output_file', help='输出安装程序文件名')
+    parser.add_argument('installer_type', nargs='?', default='nsis', choices=['nsis', 'inno'], help='安装程序类型（默认: nsis）')
+    parser.add_argument('--version', default='1.0.0', help='应用版本号（默认: 1.0.0）')
+    parser.add_argument('--app-name', default='NCM解码器', help='应用名称（默认: NCM解码器）')
+    parser.add_argument('--publisher', default='CloudMusicDecoder', help='发布者名称（默认: CloudMusicDecoder）')
+    
+    args = parser.parse_args()
+    
+    if not os.path.exists(args.dist_dir):
+        print(f"错误: 目录不存在: {args.dist_dir}")
         sys.exit(1)
     
-    dist_dir = sys.argv[1]
-    output_file = sys.argv[2]
-    installer_type = sys.argv[3] if len(sys.argv) > 3 else "nsis"
-    
-    if not os.path.exists(dist_dir):
-        print(f"错误: 目录不存在: {dist_dir}")
-        sys.exit(1)
-    
-    if installer_type == "nsis":
-        create_nsis_installer(dist_dir, output_file)
-    elif installer_type == "inno":
-        create_inno_setup_installer(dist_dir, output_file)
+    if args.installer_type == "nsis":
+        create_nsis_installer(args.dist_dir, args.output_file, args.app_name, args.version, args.publisher)
+    elif args.installer_type == "inno":
+        create_inno_setup_installer(args.dist_dir, args.output_file, args.app_name, args.version, args.publisher)
     else:
-        print(f"错误: 未知的安装程序类型: {installer_type}")
+        print(f"错误: 未知的安装程序类型: {args.installer_type}")
         print("支持的类型: nsis, inno")
         sys.exit(1)
 
