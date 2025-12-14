@@ -55,3 +55,5 @@ example/
 
 # Package Usage
 scripts/package
+/scripts/PACKAGING.md
+/config.json

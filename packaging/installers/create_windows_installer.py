@@ -132,14 +132,25 @@ Filename: "{{app}}\\NCMDecoder.exe"; Description: "启动{app_name}"; Flags: now
     # 运行Inno Setup编译器
     iscc = "iscc"
     if sys.platform == "win32":
-        possible_paths = [
-            r"C:\\Program Files (x86)\\Inno Setup 6\\ISCC.exe",
-            r"C:\\Program Files\\Inno Setup 6\\ISCC.exe",
-        ]
-        for path in possible_paths:
-            if os.path.exists(path):
-                iscc = path
-                break
+        # First, try to find ISCC.exe in PATH
+        import shutil
+        iscc_in_path = shutil.which("ISCC.exe")
+        if iscc_in_path:
+            iscc = iscc_in_path
+        else:
+            # Try common installation paths
+            possible_paths = [
+                r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+                r"C:\Program Files\Inno Setup 6\ISCC.exe",
+                r"D:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+                r"D:\Program Files\Inno Setup 6\ISCC.exe",
+                r"E:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+                r"E:\Program Files\Inno Setup 6\ISCC.exe",
+            ]
+            for path in possible_paths:
+                if os.path.exists(path):
+                    iscc = path
+                    break
     
     try:
         subprocess.run([iscc, str(script_path)], check=True)

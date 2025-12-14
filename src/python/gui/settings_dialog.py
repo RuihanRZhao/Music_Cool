@@ -226,3 +226,4 @@ class SettingsDialog(QDialog):
             self.settings_changed.emit(emit_language, emit_theme)
         
         super().accept()
+
