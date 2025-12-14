@@ -206,32 +206,16 @@ class SettingsDialog(QDialog):
         language = self.language_combo.currentData()
         theme = self.theme_combo.currentData()
         
-        # #region agent log
-        import json, os
-        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"settings_dialog.py:206","message":"SettingsDialog.accept entry","data":{"language":language,"theme":theme,"initial_language":self.initial_language,"initial_theme":self.initial_theme},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
-        
         # 保存设置
         language_changed = False
         theme_changed = False
         if language and language != self.initial_language:
             self.i18n_manager.save_language(language)
             language_changed = True
-            # #region agent log
-            with open(log_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"settings_dialog.py:212","message":"Language saved","data":{"language":language},"timestamp":int(__import__('time').time()*1000)})+'\n')
-            # #endregion
         
         if theme and theme != self.initial_theme:
             self.theme_manager.save_theme(theme)
             theme_changed = True
-            # #region agent log
-            with open(log_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"settings_dialog.py:217","message":"Theme saved","data":{"theme":theme},"timestamp":int(__import__('time').time()*1000)})+'\n')
-            # #endregion
         
         # 发送信号通知主窗口
         # 只发送实际更改的设置，发送新值以便主窗口更新
@@ -239,15 +223,6 @@ class SettingsDialog(QDialog):
             # 发送更改后的值（如果语言更改了发送新语言，否则发送None让主窗口知道没有语言更改）
             emit_language = language if language_changed else None
             emit_theme = theme if theme_changed else None
-            # #region agent log
-            with open(log_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"settings_dialog.py:224","message":"Emitting settings_changed signal","data":{"emit_language":emit_language,"emit_theme":emit_theme,"language_changed":language_changed,"theme_changed":theme_changed},"timestamp":int(__import__('time').time()*1000)})+'\n')
-            # #endregion
             self.settings_changed.emit(emit_language, emit_theme)
-        else:
-            # #region agent log
-            with open(log_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"C","location":"settings_dialog.py:230","message":"No changes, not emitting signal","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
-            # #endregion
         
         super().accept()

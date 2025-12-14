@@ -136,13 +136,6 @@ class MainWindow(QMainWindow):
         main_layout.addLayout(button_layout)
         
         # 进度显示
-        # #region agent log
-        import json, os
-        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"main_window.py:139","message":"Creating ProgressWidget","data":{"i18n_manager_type":type(self.i18n_manager).__name__},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
         self.progress_widget = ProgressWidget(i18n_manager=self.i18n_manager)
         main_layout.addWidget(self.progress_widget)
         
@@ -153,12 +146,6 @@ class MainWindow(QMainWindow):
         self.file_tree_group = QGroupBox(self.i18n_manager.tr('file_list'))
         file_tree_layout = QVBoxLayout()
         file_tree_layout.setContentsMargins(12, 12, 12, 12)
-        # #region agent log
-        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"B","location":"main_window.py:149","message":"Creating FileTreeWidget","data":{"i18n_manager_type":type(self.i18n_manager).__name__},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
         self.file_tree = FileTreeWidget(i18n_manager=self.i18n_manager)
         file_tree_layout.addWidget(self.file_tree)
         self.file_tree_group.setLayout(file_tree_layout)
@@ -187,73 +174,30 @@ class MainWindow(QMainWindow):
     
     def on_settings_changed(self, language: str, theme: str):
         """设置更改回调"""
-        # #region agent log
-        import json, os
-        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:188","message":"on_settings_changed entry","data":{"language":language,"theme":theme,"current_language":self.i18n_manager.current_language,"current_theme":self.current_theme},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
-        
         # 更新语言
         # 如果 language 不是 None，说明语言被更改了（设置对话框只在 language_changed 时发送 language）
         if language:
-            old_language = self.i18n_manager.current_language
             # 确保 current_language 与信号中的 language 一致（可能已经在 save_language 中更新了）
             self.i18n_manager.current_language = language
-            # #region agent log
-            with open(log_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:194","message":"Language change detected, updating","data":{"old_language":old_language,"new_language":language},"timestamp":int(__import__('time').time()*1000)})+'\n')
-            # #endregion
             self.update_ui_texts()
-            # #region agent log
-            with open(log_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:199","message":"update_ui_texts completed","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
-            # #endregion
-        else:
-            # #region agent log
-            with open(log_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:202","message":"No language change, skipping language update","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
-            # #endregion
         
         # 更新主题
         # 如果 theme 不是 None，说明主题被更改了（设置对话框只在 theme_changed 时发送 theme）
         if theme:
-            # #region agent log
-            with open(log_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"D","location":"main_window.py:217","message":"Theme change detected, updating","data":{"old_theme":self.current_theme,"new_theme":theme},"timestamp":int(__import__('time').time()*1000)})+'\n')
-            # #endregion
             self.current_theme = theme
             self.apply_theme(theme)
     
     def update_ui_texts(self):
         """更新所有UI文本"""
-        # #region agent log
-        import json, os
-        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:200","message":"update_ui_texts entry","data":{"current_language":self.i18n_manager.current_language},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
-        
         # 窗口标题
         new_title = self.i18n_manager.tr('app_title')
         self.setWindowTitle(new_title)
-        # #region agent log
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:207","message":"Window title updated","data":{"title":new_title},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
         
         # 标题标签
         self.title_label.setText(new_title)
         
         # 设置按钮
-        settings_text = f"⚙ {self.i18n_manager.tr('settings')}"
-        self.settings_btn.setText(settings_text)
-        # #region agent log
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:215","message":"Settings button updated","data":{"text":settings_text},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
+        self.settings_btn.setText(f"⚙ {self.i18n_manager.tr('settings')}")
         
         # 组框标题
         self.config_group.setTitle(self.i18n_manager.tr('config'))
@@ -277,16 +221,8 @@ class MainWindow(QMainWindow):
         self.stop_btn.setText(self.i18n_manager.tr('stop'))
         
         # 更新子组件
-        # #region agent log
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:235","message":"Updating child widgets","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
         self.progress_widget.update_texts(self.i18n_manager)
         self.file_tree.update_texts(self.i18n_manager)
-        # #region agent log
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"E","location":"main_window.py:238","message":"update_ui_texts completed","data":{},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
     
     def switch_theme(self, theme_name: str):
         """切换主题"""

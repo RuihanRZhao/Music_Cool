@@ -11,20 +11,9 @@ class ProgressWidget(QWidget):
     """进度显示组件"""
     
     def __init__(self, parent=None, i18n_manager=None):
-        # #region agent log
-        import json, os
-        log_path = r'e:\Tools\CloudMusicDecoder\.cursor\debug.log'
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"progress_widget.py:13","message":"ProgressWidget.__init__ entry","data":{"parent_type":type(parent).__name__ if parent else "None","i18n_manager_type":type(i18n_manager).__name__ if i18n_manager else "None"},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
         super().__init__(parent)
         self.current_theme = None
         self.i18n_manager = i18n_manager
-        # #region agent log
-        with open(log_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({"sessionId":"debug-session","runId":"run1","hypothesisId":"A","location":"progress_widget.py:17","message":"ProgressWidget.__init__ after super()","data":{"i18n_manager_set":self.i18n_manager is not None},"timestamp":int(__import__('time').time()*1000)})+'\n')
-        # #endregion
         self.init_ui()
         
     def init_ui(self):
