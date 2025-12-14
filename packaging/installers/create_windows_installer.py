@@ -94,6 +94,14 @@ SectionEnd
 
 def create_inno_setup_installer(dist_dir: str, output_file: str, app_name: str = "NCM解码器", app_version: str = "1.0.0", publisher: str = "CloudMusicDecoder"):
     """使用Inno Setup创建安装程序"""
+    # Get output directory and filename
+    output_path = Path(output_file)
+    output_dir = output_path.parent.resolve()
+    output_base = output_path.stem
+    
+    # Ensure output directory exists
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
     inno_script = """
 [Setup]
 AppName={app_name}
@@ -101,7 +109,7 @@ AppVersion={app_version}
 AppPublisher={publisher}
 DefaultDirName={{pf}}\\{app_dir}
 DefaultGroupName={app_name}
-OutputDir=.
+OutputDir={output_dir}
 OutputBaseFilename={output_base}
 Compression=lzma
 SolidCompression=yes
@@ -119,7 +127,8 @@ Name: "{{commondesktop}}\\{app_name}"; Filename: "{{app}}\\NCMDecoder.exe"
 Filename: "{{app}}\\NCMDecoder.exe"; Description: "启动{app_name}"; Flags: nowait postinstall skipifsilent
 """.format(
         dist_dir=dist_dir.replace("\\", "\\\\"),
-        output_base=Path(output_file).stem,
+        output_dir=str(output_dir).replace("\\", "\\\\"),
+        output_base=output_base,
         app_name=app_name,
         app_version=app_version,
         publisher=publisher,
