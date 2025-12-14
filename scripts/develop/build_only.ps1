@@ -8,8 +8,11 @@ param(
 $ErrorActionPreference = "Stop"
 
 # Get script and project directories
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Split-Path -Parent $ScriptDir
+# Script is in scripts/develop/, so we need to go up 2 levels to reach project root
+$ScriptPath = $MyInvocation.MyCommand.Path
+$ScriptDir = Split-Path -Parent $ScriptPath
+$ScriptsDir = Split-Path -Parent $ScriptDir
+$ProjectRoot = Split-Path -Parent $ScriptsDir
 
 Write-Host "=== NCM Decoder Build Script ===" -ForegroundColor Cyan
 

@@ -4,8 +4,11 @@
 $ErrorActionPreference = "Stop"
 
 # Get script and project directories
-$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ProjectRoot = Split-Path -Parent $ScriptDir
+# Script is in scripts/develop/, so we need to go up 2 levels to reach project root
+$ScriptPath = $MyInvocation.MyCommand.Path
+$ScriptDir = Split-Path -Parent $ScriptPath
+$ScriptsDir = Split-Path -Parent $ScriptDir
+$ProjectRoot = Split-Path -Parent $ScriptsDir
 
 Write-Host "=== NCM Decoder Run Script ===" -ForegroundColor Cyan
 
@@ -22,7 +25,7 @@ if (-not $env:VIRTUAL_ENV) {
 $extensionFile = Join-Path $ProjectRoot "build\ncm_decoder.pyd"
 if (-not (Test-Path $extensionFile)) {
     Write-Host "Error: Extension module not found" -ForegroundColor Red
-    Write-Host "Please run build script first: .\scripts\build_only.ps1" -ForegroundColor Yellow
+    Write-Host "Please run build script first: .\scripts\develop\build_only.ps1" -ForegroundColor Yellow
     exit 1
 }
 

@@ -52,3 +52,6 @@ example/
 
 # MinGW配置
 .mingw_path
+
+# Package Usage
+scripts/package
