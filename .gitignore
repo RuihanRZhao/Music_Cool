@@ -32,4 +32,5 @@ scripts/package
 /scripts/PACKAGING.md
 /config.json
 /src-tauri/frontend/node_modules/
+/src-tauri/frontend/dist/
 /src-tauri/target/
