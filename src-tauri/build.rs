@@ -94,10 +94,10 @@ fn link_ncm_decoder() {
         println!("cargo:warning=  cd src/cpp");
         println!("cargo:warning=  mkdir -p build && cd build");
         if cfg!(target_os = "windows") {
-            println!("cargo:warning=  cmake .. -G \"Visual Studio 18 2026\" -A x64 -DBUILD_PYTHON_BINDINGS=OFF");
+            println!("cargo:warning=  cmake .. -G \"Visual Studio 18 2026\" -A x64");
             println!("cargo:warning=  (或使用其他 VS 版本: \"Visual Studio 17 2022\", \"Visual Studio 16 2019\", \"Visual Studio 15 2017\")");
         } else {
-            println!("cargo:warning=  cmake .. -DBUILD_PYTHON_BINDINGS=OFF");
+            println!("cargo:warning=  cmake ..");
         }
         println!("cargo:warning=  cmake --build . --config Release --target ncm_decoder_static");
     }
@@ -110,5 +110,6 @@ fn link_ncm_decoder() {
         println!("cargo:rustc-link-lib=stdc++");
     }
 }
+
 
 

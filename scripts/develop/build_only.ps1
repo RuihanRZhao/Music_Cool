@@ -155,9 +155,9 @@ if (Test-Path "CMakeCache.txt") {
     }
 }
 
-# 配置 CMake（禁用 Python 绑定，只构建静态库，使用检测到的 Visual Studio 生成器）
+# 配置 CMake（只构建静态库，使用检测到的 Visual Studio 生成器）
 Write-Host "Configuring CMake for C++ decoder core..." -ForegroundColor Yellow
-cmake .. -G $vsGenerator -A x64 -DBUILD_PYTHON_BINDINGS=OFF
+cmake .. -G $vsGenerator -A x64
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "CMake configuration failed" -ForegroundColor Red

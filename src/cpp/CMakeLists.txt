@@ -5,65 +5,6 @@ project(ncm_decoder)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Option: whether to build Python bindings (pybind11 module)
-option(BUILD_PYTHON_BINDINGS "Build Python extension module with pybind11" ON)
-
-if(BUILD_PYTHON_BINDINGS)
-    # Find Python first - prefer the Python from current environment
-    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-
-    message(STATUS "Using Python executable: ${Python3_EXECUTABLE}")
-
-    # Get pybind11 CMake directory
-    set(pybind11_CMAKE_DIR "")
-
-    # Try method 1: get_cmake_dir()
-    execute_process(
-        COMMAND ${Python3_EXECUTABLE} -c "import pybind11; print(pybind11.get_cmake_dir())"
-        OUTPUT_VARIABLE pybind11_CMAKE_DIR
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-        RESULT_VARIABLE pybind11_result
-    )
-
-    if(pybind11_result EQUAL 0 AND pybind11_CMAKE_DIR)
-        string(STRIP "${pybind11_CMAKE_DIR}" pybind11_CMAKE_DIR)
-        if(EXISTS "${pybind11_CMAKE_DIR}")
-            list(APPEND CMAKE_PREFIX_PATH "${pybind11_CMAKE_DIR}")
-            message(STATUS "Found pybind11 CMake dir: ${pybind11_CMAKE_DIR}")
-        endif()
-    endif()
-
-    # Try method 2: alternative path (if method 1 failed)
-    if(NOT pybind11_CMAKE_DIR OR NOT EXISTS "${pybind11_CMAKE_DIR}")
-        execute_process(
-            COMMAND ${Python3_EXECUTABLE} -c "import pybind11; import os; print(os.path.join(os.path.dirname(pybind11.__file__), 'share', 'cmake', 'pybind11'))"
-            OUTPUT_VARIABLE pybind11_CMAKE_DIR2
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_QUIET
-            RESULT_VARIABLE pybind11_result2
-        )
-        if(pybind11_result2 EQUAL 0 AND pybind11_CMAKE_DIR2)
-            string(STRIP "${pybind11_CMAKE_DIR2}" pybind11_CMAKE_DIR2)
-            if(EXISTS "${pybind11_CMAKE_DIR2}")
-                list(APPEND CMAKE_PREFIX_PATH "${pybind11_CMAKE_DIR2}")
-                message(STATUS "Found pybind11 CMake dir (alternative): ${pybind11_CMAKE_DIR2}")
-            endif()
-        endif()
-    endif()
-
-    # Now try to find pybind11 package
-    find_package(pybind11 QUIET)
-
-    if(NOT pybind11_FOUND)
-        # If still not found, provide helpful error
-        message(FATAL_ERROR "pybind11 not found. Please ensure:\n"
-                "  1. pybind11 is installed: pip install pybind11\n"
-                "  2. You are using the correct Python environment\n"
-                "  3. Python executable: ${Python3_EXECUTABLE}")
-    endif()
-endif()
-
 # Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -82,17 +23,6 @@ set(DECODER_SOURCES
     decoder/ncm_decoder.cpp
     decoder/ncm_decoder_c_api.cpp
 )
-
-if(BUILD_PYTHON_BINDINGS)
-    set(BINDING_SOURCES
-        python_binding.cpp
-    )
-
-    # Add MinGW compatibility source if using MinGW
-    if(MINGW)
-        list(APPEND BINDING_SOURCES mingw_compat.cpp)
-    endif()
-endif()
 
 # OpenSSL library paths
 if(WIN32)
@@ -136,20 +66,6 @@ else()
     set(OPENSSL_LIBS OpenSSL::SSL OpenSSL::Crypto)
 endif()
 
-if(BUILD_PYTHON_BINDINGS)
-    # Create Python module
-    pybind11_add_module(ncm_decoder
-        ${BINDING_SOURCES}
-        ${DECODER_SOURCES}
-        ${SHARED_SOURCES}
-    )
-
-    # Link libraries
-    target_link_libraries(ncm_decoder PRIVATE
-        ${OPENSSL_LIBS}
-    )
-endif()
-
 # Create static library for Rust FFI
 add_library(ncm_decoder_static STATIC
     ${DECODER_SOURCES}
@@ -183,42 +99,4 @@ if(MSVC)
     target_compile_options(ncm_decoder_static PRIVATE /W4 /utf-8)
 else()
     target_compile_options(ncm_decoder_static PRIVATE -Wall -Wextra -Wpedantic)
-endif()
-
-if(BUILD_PYTHON_BINDINGS)
-    # For MinGW with MSVC-compiled OpenSSL, link additional runtime libraries
-    if(MINGW AND NOT OpenSSL_FOUND)
-        # Link MinGW runtime libraries that provide __chkstk and other symbols
-        # These are needed when linking MSVC-compiled static libraries with MinGW
-        # __chkstk is provided by libgcc, we need to link it explicitly
-        # Also need to ensure proper linking order
-        target_link_libraries(ncm_decoder PRIVATE
-            gcc
-            mingwex
-        )
-        # Also set linker flags to ensure static linking and proper symbol resolution
-        # Suppress .drectve warnings from MSVC-compiled static libraries
-        set_target_properties(ncm_decoder PROPERTIES
-            LINK_FLAGS "-static-libgcc -static-libstdc++ -Wl,--allow-multiple-definition -Wl,--no-warn-search-mismatch"
-        )
-        message(STATUS "Linking MinGW runtime libraries (gcc, mingwex) to resolve __chkstk")
-    endif()
-
-    # Set output directory
-    set_target_properties(ncm_decoder PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../build
-    )
-
-    # Windows specific settings
-    if(WIN32)
-        target_compile_definitions(ncm_decoder PRIVATE VERSION_INFO=${EXAMPLE_VERSION_INFO})
-    endif()
-
-    # Compiler-specific options
-    if(MSVC)
-        # /utf-8: 将源文件和执行字符集视为 UTF-8，避免 C4819 警告
-        target_compile_options(ncm_decoder PRIVATE /W4 /utf-8)
-    else()
-        target_compile_options(ncm_decoder PRIVATE -Wall -Wextra -Wpedantic)
-    endif()
 endif()

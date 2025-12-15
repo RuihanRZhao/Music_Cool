@@ -70,40 +70,20 @@
   - `.\scripts\package\Windows\package_windows.ps1 -Version 1.0.0`
 
 **配置文件位置**:
-- 项目根目录: `config.json`（与 Python 版本保持一致）
+- 项目根目录: `config.json`
 
-### Python + PyQt6 GUI 版本（Legacy）
+#### 快速脚本（Linux/macOS）
 
-**位置**: `src/python/gui/`
-
-这是**旧版 GUI**，基于 Python + PyQt6 构建。**不再积极维护**，保留仅作为参考实现。
-
-**状态**: 
-- ⚠️ Legacy - 不再推荐使用
-- ⚠️ 功能已迁移到 Tauri 版本
-- ⚠️ 可能包含过时的代码和依赖
-
-**注意**: 如果您是新用户，请使用 Tauri 版本。如果您需要参考旧版实现，可以查看 `src/python/decoder_wrapper.py` 中的解码器包装逻辑。
-
-#### 旧版构建（仅供参考）
-
-**前置要求**:
-- Python 3.8+
-- PyQt6
-- CMake（用于构建 C++ 扩展）
-
-**构建步骤**:
-```bash
-# 构建 C++ Python 扩展
-cd src/cpp
-mkdir -p build && cd build
-cmake ..
-cmake --build .
-
-# 运行 Python GUI
-cd ../../python
-python main.py
-```
+- 开发（构建 C++ 静态库并启动 Tauri dev）:
+  - `./scripts/develop/build_and_run.sh`
+- 开发（仅启动 Tauri dev，假定已构建 C++ 静态库）:
+  - `./scripts/develop/run_only.sh`
+- 仅构建 C++ 解码核心静态库:
+  - `./scripts/develop/build_only.sh`
+- Linux 打包（构建 Tauri 应用并收集安装包到 `release/<version>/`）:
+  - `./scripts/package/Linux/package_linux.sh --version 2.0.0`
+- macOS 打包（构建 Tauri 应用并收集安装包到 `release/<version>/`）:
+  - `./scripts/package/MacOS/package_macos.sh --version 2.0.0`
 
 ## 核心解码器
 
@@ -111,7 +91,6 @@ python main.py
 
 C++ 实现的 NCM 解码核心，提供以下接口：
 
-- **Python 绑定**: `python_binding.cpp` (用于旧版 Python GUI)
 - **C ABI FFI**: `ncm_decoder_c_api.cpp` (用于 Tauri Rust 后端)
 
 解码器支持：
@@ -144,5 +123,6 @@ C++ 实现的 NCM 解码核心，提供以下接口：
 ---
 
 **推荐使用 Tauri 版本以获得最佳体验和最新功能。**
+
 
 
