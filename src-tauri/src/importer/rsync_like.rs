@@ -65,21 +65,58 @@ pub fn plan_sync(params: &ImportParams) -> Result<Vec<FileTask>, String> {
             if out_path.exists() {
                 if let (Ok(src_meta), Ok(dst_meta)) = (fs::metadata(path), fs::metadata(&out_path)) {
                     let same_size = src_meta.len() == dst_meta.len();
-                    let same_mtime = src_meta.modified().ok().and_then(|t1| dst_meta.modified().ok().map(|t2| t1 == t2)).unwrap_or(false);
+                    // 比较修改时间，允许1秒的误差（某些文件系统时间精度问题）
+                    let same_mtime = src_meta.modified()
+                        .ok()
+                        .and_then(|t1| {
+                            dst_meta.modified().ok().map(|t2| {
+                                let diff = t1.duration_since(t2).unwrap_or_default()
+                                    .max(t2.duration_since(t1).unwrap_or_default());
+                                diff.as_secs() <= 1 // 允许1秒误差
+                            })
+                        })
+                        .unwrap_or(false);
                     if same_size && same_mtime {
                         continue; // 文件未变化，跳过
                     }
                 }
             }
         } else {
-            // 对于 NCM 文件：
-            // 策略：总是加入任务列表，因为：
-            // 1. 解码后的文件名由解码器从 NCM 元数据确定，无法在扫描阶段预知
-            // 2. NCM 文件本身的变化（mtime）可能意味着需要重新解码
-            // 3. 解码器内部可能会检查目标文件是否存在并决定是否覆盖
-            // 
-            // 未来优化：可以解析 NCM 文件元数据来预测输出文件名，
-            // 然后检查目标文件是否存在且未变化，但这需要额外的解析逻辑
+            // 对于 NCM 文件：尝试预测输出文件名并比较
+            // 输出文件名格式：原文件名（不含扩展名）+ 格式扩展名（如.mp3）
+            // 解码器会在输出目录下创建文件，文件名是 stem + extname
+            // 由于需要解析NCM元数据才能确定格式，这里先检查常见的输出格式
+            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+            let common_extensions = ["mp3", "flac", "m4a", "ogg", "wav"];
+            let mut should_skip = false;
+            
+            // 输出目录是相对于输出根目录的，与输入文件的相对路径相同
+            let output_dir = output_root.join(rel.parent().unwrap_or(rel));
+            
+            for ext in &common_extensions {
+                let predicted_output = output_dir.join(format!("{}.{}", stem, ext));
+                
+                if predicted_output.exists() {
+                    // 检查NCM文件的修改时间和预测输出文件的修改时间
+                    if let (Ok(ncm_meta), Ok(output_meta)) = (fs::metadata(path), fs::metadata(&predicted_output)) {
+                        let ncm_mtime = ncm_meta.modified().ok();
+                        let output_mtime = output_meta.modified().ok();
+                        
+                        // 如果输出文件比NCM文件新或相同（允许1秒误差），则认为已解码
+                        if let (Some(ncm_time), Some(out_time)) = (ncm_mtime, output_mtime) {
+                            if out_time >= ncm_time || 
+                               ncm_time.duration_since(out_time).map(|d| d.as_secs() <= 1).unwrap_or(false) {
+                                should_skip = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if should_skip {
+                continue; // NCM文件已解码且未变化，跳过
+            }
         }
 
         tasks.push(FileTask {
@@ -91,5 +128,6 @@ pub fn plan_sync(params: &ImportParams) -> Result<Vec<FileTask>, String> {
 
     Ok(tasks)
 }
+
 
 

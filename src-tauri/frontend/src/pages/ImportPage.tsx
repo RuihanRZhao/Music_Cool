@@ -104,7 +104,7 @@ export const ImportPage: React.FC = () => {
 
   const [newProjectPath, setNewProjectPath] = useState("");
 
-  const [newProjectExclude, setNewProjectExclude] = useState("");
+  const [newProjectExclude, setNewProjectExclude] = useState<string[]>([]);
 
   const intervalRef = useRef<number | null>(null);
 
@@ -330,6 +330,78 @@ export const ImportPage: React.FC = () => {
 
   };
 
+  const handleSelectExcludePath = async () => {
+
+    try {
+
+      const selected = await open({
+
+        directory: true,
+
+        multiple: false,
+
+        title: "选择排除目录",
+
+      });
+
+      if (selected && typeof selected === "string") {
+
+        // 计算相对于输入路径的相对路径
+
+        if (newProjectPath) {
+
+          const inputPath = newProjectPath.replace(/\\/g, "/");
+
+          const excludePath = selected.replace(/\\/g, "/");
+
+          if (excludePath.startsWith(inputPath)) {
+
+            const relativePath = excludePath.substring(inputPath.length).replace(/^\//, "");
+
+            if (relativePath && !newProjectExclude.includes(relativePath)) {
+
+              setNewProjectExclude([...newProjectExclude, relativePath]);
+
+            }
+
+          } else {
+
+            // 如果不在输入路径下，直接使用完整路径的最后一部分作为相对路径
+
+            const pathParts = excludePath.split("/");
+
+            const lastPart = pathParts[pathParts.length - 1];
+
+            if (lastPart && !newProjectExclude.includes(lastPart)) {
+
+              setNewProjectExclude([...newProjectExclude, lastPart]);
+
+            }
+
+          }
+
+        } else {
+
+          alert("请先选择输入路径");
+
+        }
+
+      }
+
+    } catch (err) {
+
+      console.error("Failed to select exclude path:", err);
+
+    }
+
+  };
+
+  const handleRemoveExcludePath = (path: string) => {
+
+    setNewProjectExclude(newProjectExclude.filter((p) => p !== path));
+
+  };
+
 
 
   const handleCreateProject = async () => {
@@ -344,21 +416,13 @@ export const ImportPage: React.FC = () => {
 
     try {
 
-      const excludePatterns = newProjectExclude
-
-        .split(",")
-
-        .map((s) => s.trim())
-
-        .filter(Boolean);
-
       await invoke<Project>("create_project", {
 
         name: newProjectName.trim(),
 
         inputPath: newProjectPath.trim(),
 
-        excludePatterns,
+        excludePatterns: newProjectExclude,
 
       });
 
@@ -368,7 +432,7 @@ export const ImportPage: React.FC = () => {
 
       setNewProjectPath("");
 
-      setNewProjectExclude("");
+      setNewProjectExclude([]);
 
       loadProjects();
 
@@ -786,21 +850,91 @@ export const ImportPage: React.FC = () => {
 
             <div className="form-row">
 
-              <label>排除规则 (逗号分隔):</label>
+              <label>排除路径:</label>
 
-              <input
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
 
-                type="text"
+                {newProjectExclude.length > 0 && (
 
-                value={newProjectExclude}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
 
-                onChange={(e) => setNewProjectExclude(e.target.value)}
+                    {newProjectExclude.map((path, idx) => (
 
-                className="input"
+                      <div
 
-                placeholder="例如: Vip, temp"
+                        key={idx}
 
-              />
+                        style={{
+
+                          display: "flex",
+
+                          alignItems: "center",
+
+                          justifyContent: "space-between",
+
+                          padding: "6px 12px",
+
+                          backgroundColor: "#f5f5f5",
+
+                          borderRadius: "4px",
+
+                        }}
+
+                      >
+
+                        <span style={{ flex: 1, fontSize: "14px" }}>{path}</span>
+
+                        <button
+
+                          onClick={() => handleRemoveExcludePath(path)}
+
+                          style={{
+
+                            padding: "4px 8px",
+
+                            fontSize: "12px",
+
+                            backgroundColor: "#ff4444",
+
+                            color: "white",
+
+                            border: "none",
+
+                            borderRadius: "4px",
+
+                            cursor: "pointer",
+
+                          }}
+
+                        >
+
+                          移除
+
+                        </button>
+
+                      </div>
+
+                    ))}
+
+                  </div>
+
+                )}
+
+                <button
+
+                  onClick={handleSelectExcludePath}
+
+                  className="btn btn-secondary"
+
+                  style={{ alignSelf: "flex-start" }}
+
+                >
+
+                  选择排除目录
+
+                </button>
+
+              </div>
 
             </div>
 
@@ -1009,3 +1143,4 @@ export const ImportPage: React.FC = () => {
   );
 
 };
+

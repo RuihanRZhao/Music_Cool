@@ -579,7 +579,13 @@ pub struct FileInfo {
 
 fn extract_audio_metadata(path: &std::path::Path) -> (Option<String>, Option<String>, Option<u64>) {
 
-    use lofty::{read_from_path, TaggedFileExt};
+    use lofty::{read_from_path, prelude::TaggedFileExt};
+
+    use lofty::file::AudioFile;
+
+    use lofty::tag::{Tag, Accessor};
+
+    use std::borrow::Cow;
 
     match read_from_path(path) {
 
@@ -589,15 +595,15 @@ fn extract_audio_metadata(path: &std::path::Path) -> (Option<String>, Option<Str
 
             let artist = tag
 
-                .and_then(|t| t.artist())
+                .and_then(|t: &Tag| t.artist())
 
-                .map(|s| s.to_string());
+                .map(|s: Cow<'_, str>| s.to_string());
 
             let album = tag
 
-                .and_then(|t| t.album())
+                .and_then(|t: &Tag| t.album())
 
-                .map(|s| s.to_string());
+                .map(|s: Cow<'_, str>| s.to_string());
 
             let duration = tagged_file.properties().duration().as_secs();
 
