@@ -57,3 +57,4 @@ example/
 scripts/package
 /scripts/PACKAGING.md
 /config.json
+/src-tauri/frontend/node_modules/

@@ -1,5 +1,10 @@
 """
-主窗口 - Clash Verge 风格，支持主题切换
+Legacy PyQt6 GUI - 主窗口
+
+⚠️ 注意：此文件属于旧版 GUI 实现，不再积极维护。
+推荐使用 Tauri 版本（位于 src-tauri/）作为主要桌面应用。
+
+此文件保留仅作为参考实现。
 """
 
 import logging

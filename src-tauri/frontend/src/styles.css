@@ -1,0 +1,236 @@
+/* Notion 风格全局样式 */
+
+:root {
+  --bg-main: #ffffff;
+  --bg-sidebar: #f7f6f3;
+  --text-primary: #37352f;
+  --text-secondary: #787774;
+  --border: #e9e9e7;
+  --hover-bg: #f1f1ef;
+  --active-bg: #e9e9e7;
+  --btn-primary: #2383e2;
+  --btn-primary-hover: #1a73d1;
+  --progress-bg: #e9e9e7;
+  --progress-fill: #2383e2;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--bg-main);
+}
+
+.app-root {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 240px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 16px 20px;
+  font-weight: 600;
+  font-size: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 8px;
+}
+
+.sidebar-item {
+  display: block;
+  padding: 8px 12px;
+  height: 32px;
+  line-height: 16px;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: 3px;
+  transition: all 0.15s ease-out;
+}
+
+.sidebar-item:hover {
+  background: var(--hover-bg);
+}
+
+.sidebar-item.active {
+  background: var(--active-bg);
+  border-left: 2px solid var(--btn-primary);
+}
+
+.app-main {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg-main);
+}
+
+.page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 48px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--text-primary);
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 16px 20px;
+  box-shadow: rgba(15, 15, 15, 0.03) 0px 0px 0px 1px, rgba(15, 15, 15, 0.03) 0px 2px 4px;
+}
+
+.form-row {
+  margin-bottom: 16px;
+}
+
+.form-row label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  height: 32px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 14px;
+  transition: all 0.15s ease-out;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--btn-primary);
+}
+
+.btn {
+  height: 32px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-out;
+}
+
+.btn-primary {
+  background: var(--btn-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--btn-primary-hover);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: var(--bg-sidebar);
+}
+
+.table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr:hover {
+  background: var(--hover-bg);
+}
+
+.progress-section {
+  margin-top: 24px;
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--progress-bg);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--progress-fill);
+  border-radius: 2px;
+  transition: width 0.3s ease-out;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.progress-bar-small {
+  height: 2px;
+  margin-top: 4px;
+}
+
+.threads-list {
+  margin-top: 16px;
+}
+
+.thread-item {
+  margin-bottom: 12px;
+  padding: 8px;
+  background: var(--bg-sidebar);
+  border-radius: 3px;
+}
+
+.thread-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.thread-file {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+

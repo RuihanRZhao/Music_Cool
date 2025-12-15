@@ -1,0 +1,48 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:5173",
+    "distDir": "frontend/dist"
+  },
+  "package": {
+    "productName": "Music_Cool",
+    "version": "0.1.0"
+  },
+  "tauri": {
+    "bundle": {
+      "identifier": "com.musiccool.app",
+      "icon": [
+        "icons/icon.ico"
+      ],
+      "targets": "all"
+    },
+    "windows": [
+      {
+        "title": "Music_Cool",
+        "width": 1200,
+        "height": 800,
+        "resizable": true
+      }
+    ],
+    "allowlist": {
+      "all": false,
+      "shell": {
+        "all": false,
+        "open": true
+      },
+      "dialog": {
+        "all": false,
+        "open": true
+      },
+      "fs": {
+        "all": false,
+        "readDir": true,
+        "readFile": true
+      }
+    },
+    "security": {
+      "csp": null
+    }
+  }
+}
