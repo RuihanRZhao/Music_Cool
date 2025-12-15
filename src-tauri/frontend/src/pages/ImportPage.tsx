@@ -68,6 +68,10 @@ interface ImportStatus {
 
   processed_files?: number;
 
+  skipped_files?: number;
+
+  new_files?: number;
+
 }
 
 
@@ -99,6 +103,10 @@ export const ImportPage: React.FC = () => {
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+
+  const [completionStats, setCompletionStats] = useState<{ skipped: number; new: number } | null>(null);
 
   const [newProjectName, setNewProjectName] = useState("");
 
@@ -182,7 +190,7 @@ export const ImportPage: React.FC = () => {
 
             setStatus(event.payload);
 
-            if (event.payload.progress >= 1.0) {
+            if (event.payload.stage === "finished" || event.payload.progress >= 1.0) {
 
               if (intervalRef.current) {
 
@@ -191,6 +199,18 @@ export const ImportPage: React.FC = () => {
                 intervalRef.current = null;
 
               }
+
+              // 显示完成弹窗
+
+              setCompletionStats({
+
+                skipped: event.payload.skipped_files || 0,
+
+                new: event.payload.new_files || 0,
+
+              });
+
+              setShowCompletionModal(true);
 
             }
 
@@ -208,7 +228,7 @@ export const ImportPage: React.FC = () => {
 
             setStatus(s);
 
-            if (s.progress >= 1.0) {
+            if (s.stage === "finished" || s.progress >= 1.0) {
 
               if (intervalRef.current) {
 
@@ -217,6 +237,18 @@ export const ImportPage: React.FC = () => {
                 intervalRef.current = null;
 
               }
+
+              // 显示完成弹窗
+
+              setCompletionStats({
+
+                skipped: s.skipped_files || 0,
+
+                new: s.new_files || 0,
+
+              });
+
+              setShowCompletionModal(true);
 
             }
 
@@ -252,7 +284,7 @@ export const ImportPage: React.FC = () => {
 
             setStatus(s);
 
-            if (s.progress >= 1.0) {
+            if (s.stage === "finished" || s.progress >= 1.0) {
 
               if (intervalRef.current) {
 
@@ -261,6 +293,18 @@ export const ImportPage: React.FC = () => {
                 intervalRef.current = null;
 
               }
+
+              // 显示完成弹窗
+
+              setCompletionStats({
+
+                skipped: s.skipped_files || 0,
+
+                new: s.new_files || 0,
+
+              });
+
+              setShowCompletionModal(true);
 
             }
 
@@ -1136,6 +1180,57 @@ export const ImportPage: React.FC = () => {
 
         </div>
 
+      )}
+
+      {/* 完成弹窗 */}
+      {showCompletionModal && completionStats && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setShowCompletionModal(false)}
+        >
+          <div
+            className="card"
+            style={{ width: "400px", maxWidth: "90vw" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0 }}>导入完成</h2>
+            <div style={{ marginBottom: "20px" }}>
+              <div style={{ marginBottom: "12px", padding: "12px", backgroundColor: "#f0f0f0", borderRadius: "4px" }}>
+                <div style={{ fontSize: "18px", fontWeight: "bold", marginBottom: "8px" }}>统计信息</div>
+                <div style={{ fontSize: "16px", marginBottom: "4px" }}>
+                  <span style={{ color: "#666" }}>已匹配（跳过）:</span>{" "}
+                  <span style={{ color: "#4CAF50", fontWeight: "bold" }}>{completionStats.skipped}</span> 个文件
+                </div>
+                <div style={{ fontSize: "16px" }}>
+                  <span style={{ color: "#666" }}>新匹配（处理）:</span>{" "}
+                  <span style={{ color: "#2196F3", fontWeight: "bold" }}>{completionStats.new}</span> 个文件
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
+              <button
+                onClick={() => {
+                  setShowCompletionModal(false);
+                  setCompletionStats(null);
+                }}
+                className="btn btn-primary"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </section>

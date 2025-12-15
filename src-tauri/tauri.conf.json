@@ -6,11 +6,12 @@
     "distDir": "frontend/dist"
   },
   "package": {
-    "productName": "Music_Cool",
-    "version": "0.1.0"
+    "productName": "Music Cool",
+    "version": "2.0.0"
   },
   "tauri": {
     "bundle": {
+      "active": true,
       "identifier": "com.musiccool.app",
       "icon": [
         "icons/icon.ico"
@@ -46,3 +47,11 @@
     }
   }
 }
+
+
+
+
+
+
+
+

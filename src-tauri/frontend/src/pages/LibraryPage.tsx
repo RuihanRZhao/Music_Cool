@@ -126,6 +126,16 @@ export const LibraryPage: React.FC = () => {
 
 
 
+  // 计算统计信息
+  const stats = React.useMemo(() => {
+    const totalSongs = items.length;
+    const totalSize = items.reduce((sum, item) => sum + item.size, 0);
+    return {
+      totalSongs,
+      totalSize,
+    };
+  }, [items]);
+
   const sortedAndFilteredItems = React.useMemo(() => {
 
     let filtered = items;
@@ -220,7 +230,25 @@ export const LibraryPage: React.FC = () => {
 
       </div>
 
-
+      {/* 统计信息卡片 */}
+      {!loading && items.length > 0 && (
+        <div className="card" style={{ marginBottom: "20px", backgroundColor: "#f8f9fa" }}>
+          <div style={{ display: "flex", gap: "32px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: "14px", color: "#666", marginBottom: "4px" }}>歌曲总数</div>
+              <div style={{ fontSize: "24px", fontWeight: "bold", color: "#2196F3" }}>
+                {stats.totalSongs.toLocaleString()}
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: "14px", color: "#666", marginBottom: "4px" }}>占用空间</div>
+              <div style={{ fontSize: "24px", fontWeight: "bold", color: "#4CAF50" }}>
+                {formatSize(stats.totalSize)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
 

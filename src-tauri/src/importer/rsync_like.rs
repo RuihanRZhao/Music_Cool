@@ -12,13 +12,22 @@ pub struct FileTask {
     pub is_ncm: bool,
 }
 
+/// 同步计划结果，包含任务列表和统计信息
+#[derive(Debug, Clone)]
+pub struct SyncPlan {
+    pub tasks: Vec<FileTask>,
+    pub skipped_files: usize,
+    #[allow(dead_code)]
+    pub total_scanned: usize,
+}
+
 fn is_excluded(rel: &Path, exclude_dirs: &[String]) -> bool {
     let rel_str = rel.to_string_lossy();
     exclude_dirs.iter().any(|pat| !pat.is_empty() && rel_str.starts_with(pat))
 }
 
 /// 计算需要同步的任务列表（只新增/更新，不删除多余文件）
-pub fn plan_sync(params: &ImportParams) -> Result<Vec<FileTask>, String> {
+pub fn plan_sync(params: &ImportParams) -> Result<SyncPlan, String> {
     let input_root = Path::new(&params.input_path);
     let output_root = Path::new(&params.output_path);
 
@@ -30,6 +39,8 @@ pub fn plan_sync(params: &ImportParams) -> Result<Vec<FileTask>, String> {
     }
 
     let mut tasks = Vec::new();
+    let mut skipped_files = 0;
+    let mut total_scanned = 0;
 
     for entry in WalkDir::new(input_root).into_iter().filter_map(|e| e.ok()) {
         if !entry.file_type().is_file() {
@@ -40,6 +51,8 @@ pub fn plan_sync(params: &ImportParams) -> Result<Vec<FileTask>, String> {
             Ok(r) => r,
             Err(_) => continue,
         };
+
+        total_scanned += 1;
 
         if is_excluded(rel, &params.exclude_dirs) {
             continue;
@@ -77,6 +90,7 @@ pub fn plan_sync(params: &ImportParams) -> Result<Vec<FileTask>, String> {
                         })
                         .unwrap_or(false);
                     if same_size && same_mtime {
+                        skipped_files += 1;
                         continue; // 文件未变化，跳过
                     }
                 }
@@ -115,6 +129,7 @@ pub fn plan_sync(params: &ImportParams) -> Result<Vec<FileTask>, String> {
             }
             
             if should_skip {
+                skipped_files += 1;
                 continue; // NCM文件已解码且未变化，跳过
             }
         }
@@ -126,7 +141,11 @@ pub fn plan_sync(params: &ImportParams) -> Result<Vec<FileTask>, String> {
         });
     }
 
-    Ok(tasks)
+    Ok(SyncPlan {
+        tasks,
+        skipped_files,
+        total_scanned,
+    })
 }
 
 

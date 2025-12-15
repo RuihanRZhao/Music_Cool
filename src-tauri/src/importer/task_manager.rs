@@ -128,6 +128,18 @@ pub struct ImportStatus {
 
     pub processed_files: usize,
 
+    /// 跳过的文件数（已匹配，无需处理）
+
+    #[serde(default)]
+
+    pub skipped_files: usize,
+
+    /// 新处理的文件数（新匹配的）
+
+    #[serde(default)]
+
+    pub new_files: usize,
+
 }
 
 
@@ -221,8 +233,11 @@ impl ImportTaskManager {
 
 
 
-        let tasks = rsync_like::plan_sync(&params)?;
+        let sync_plan = rsync_like::plan_sync(&params)?;
 
+        let tasks = sync_plan.tasks;
+        let skipped_files = sync_plan.skipped_files;
+        let new_files = tasks.len();
         let total_files = tasks.len().max(1) as f32;
 
         let total_files_usize = tasks.len();
@@ -270,6 +285,10 @@ impl ImportTaskManager {
                         total_files: total_files_usize,
 
                         processed_files: 0,
+
+                        skipped_files,
+
+                        new_files,
 
                     },
 
@@ -613,6 +632,10 @@ impl ImportTaskManager {
 
                         processed_files: 0,
 
+                        skipped_files: 0,
+
+                        new_files: 0,
+
                     },
 
                 },
@@ -679,9 +702,9 @@ impl ImportTaskManager {
 
                 // 扫描文件
 
-                let tasks = match rsync_like::plan_sync(&params) {
+                let sync_plan = match rsync_like::plan_sync(&params) {
 
-                    Ok(t) => t,
+                    Ok(p) => p,
 
                     Err(e) => {
 
@@ -711,7 +734,18 @@ impl ImportTaskManager {
 
                 };
 
+                let tasks = sync_plan.tasks;
+                let project_skipped = sync_plan.skipped_files;
                 let project_total_files = tasks.len();
+
+                // 更新统计信息
+                {
+                    let mut map = manager.inner.write().await;
+                    if let Some(task) = map.get_mut(&task_id) {
+                        task.status.skipped_files += project_skipped;
+                        task.status.new_files += project_total_files;
+                    }
+                }
 
                 let current_total = total_files.fetch_add(project_total_files, Ordering::Relaxed) + project_total_files;
 

@@ -1,6 +1,6 @@
 [package]
 name = "music-cool-app"
-version = "0.1.0"
+version = "2.0.0"
 edition = "2021"
 
 description = "Music_Cool 桌面应用（Tauri + Rust + Web 前端）"
